@@ -1,23 +1,23 @@
 import streamlit as st
 
-# =====================================
-# CONFIG
-# =====================================
+# =====================================================
+# CONFIGURAÇÃO
+# =====================================================
 st.set_page_config(
-    page_title="Football Studio – Ciclo 5 Inteligente",
+    page_title="Football Studio – IA Ciclo 9",
     layout="centered"
 )
 
-# =====================================
-# STATE
-# =====================================
+# =====================================================
+# ESTADO GLOBAL
+# =====================================================
 if "history" not in st.session_state:
-    st.session_state.history = []  # ordem REAL: antigo -> recente
+    st.session_state.history = []  # antigo -> recente
 
-# =====================================
-# UI INPUT
-# =====================================
-st.title("⚽ Football Studio – Leitura Correta")
+# =====================================================
+# UI – ENTRADA DE DADOS
+# =====================================================
+st.title("⚽ Football Studio – IA Profissional (Ciclo 9)")
 
 c1, c2, c3 = st.columns(3)
 if c1.button("🔴 HOME"):
@@ -27,92 +27,100 @@ if c2.button("🔵 AWAY"):
 if c3.button("🟡 DRAW"):
     st.session_state.history.append("D")
 
-# =====================================
-# UTILS
-# =====================================
+# =====================================================
+# UTILIDADES
+# =====================================================
 def icon(x):
     return "🔴" if x == "R" else "🔵" if x == "B" else "🟡"
 
-def last5(hist):
-    if len(hist) < 5:
+def get_last_n(hist, n):
+    if len(hist) < n:
         return None
-    return hist[-5:]  # ordem correta: antigo -> recente
+    return hist[-n:]  # antigo -> recente
 
-# =====================================
-# HISTÓRICO VISUAL (INVERTIDO)
-# =====================================
-st.markdown("## 📊 Histórico (mais recente → mais antigo)")
+# =====================================================
+# HISTÓRICO VISUAL
+# =====================================================
+st.markdown("## 📊 Histórico (Mais recente → Mais antigo)")
 visual = list(reversed(st.session_state.history[-30:]))
 st.write(" ".join(icon(x) for x in visual))
 
-# =====================================
-# PADRÕES – CICLO 5
-# =====================================
-def detect_pattern(c5):
-    # c5 está na ordem correta: antigo -> recente
-    r = c5.count("R")
-    b = c5.count("B")
-    d = c5.count("D")
+# =====================================================
+# IA – ANÁLISE CICLO 9 (ESTRUTURAL)
+# =====================================================
+def analyze_cycle_9(c9):
+    # c9 está em ordem temporal correta (antigo -> recente)
 
-    alternancias = sum(
-        1 for i in range(1, 5) if c5[i] != c5[i - 1]
-    )
+    r = c9.count("R")
+    b = c9.count("B")
+    d = c9.count("D")
 
-    # 🔁 Repetição
-    if r == 5:
-        return "Repetição 🔴", "R", 70
-    if b == 5:
-        return "Repetição 🔵", "B", 70
+    alternancias = sum(1 for i in range(1, 9) if c9[i] != c9[i-1])
 
-    # 🧱 Bloco 4 + 1
-    if r == 4:
-        return "Bloco 4+1 🔴", "R", 65
-    if b == 4:
-        return "Bloco 4+1 🔵", "B", 65
+    # -------------------------------------------------
+    # 1. REPETIÇÃO DOMINANTE (CONTROLE)
+    # -------------------------------------------------
+    if r >= 7:
+        return "Domínio prolongado 🔴", "R", 75
+    if b >= 7:
+        return "Domínio prolongado 🔵", "B", 75
 
-    # 🎭 Falsa quebra
-    if c5[-1] != c5[-2] and c5.count(c5[-2]) >= 3:
-        return "Falsa quebra (retorno)", c5[-2], 63
+    # -------------------------------------------------
+    # 2. BLOCO ESTRUTURAL 6 + 3
+    # -------------------------------------------------
+    if r == 6 and b == 3:
+        return "Estrutura 6x3 🔴", "R", 70
+    if b == 6 and r == 3:
+        return "Estrutura 6x3 🔵", "B", 70
 
-    # ⚖️ Bloco 3x2
-    if r == 3 and b == 2:
-        return "Bloco 3x2 🔴", "R", 60
-    if b == 3 and r == 2:
-        return "Bloco 3x2 🔵", "B", 60
+    # -------------------------------------------------
+    # 3. FALSA QUEBRA REAL (RETORNO)
+    # -------------------------------------------------
+    if c9[-1] != c9[-2]:
+        dominante = c9[-2]
+        if c9.count(dominante) >= 5:
+            return "Falsa quebra confirmada", dominante, 72
 
-    # 🟡 Pressão de empate
-    if d >= 3:
-        return "Pressão de empate", "D", 62
+    # -------------------------------------------------
+    # 4. SIMETRIA OCULTA (3–3–3)
+    # -------------------------------------------------
+    if c9[:3] == c9[3:6] == c9[6:9]:
+        return "Simetria 3x3x3", c9[-1], 76
 
-    # 🔄 Alternância excessiva
-    if alternancias >= 4:
-        return "Alternância (armadilha)", None, 0
+    # -------------------------------------------------
+    # 5. COMPRESSÃO (ARMADILHA)
+    # -------------------------------------------------
+    if alternancias >= 6 and r >= 3 and b >= 3:
+        return "Compressão ativa (aguardar)", None, 0
 
-    # 🔒 Compressão
-    if alternancias == 3 and r >= 2 and b >= 2:
-        return "Compressão (aguardar explosão)", None, 0
+    # -------------------------------------------------
+    # 6. PRESSÃO DE EMPATE
+    # -------------------------------------------------
+    if d >= 4:
+        return "Pressão estatística de Draw", "D", 73
 
-    return "Sem padrão válido", None, 0
+    # -------------------------------------------------
+    return "Sem padrão confiável", None, 0
 
-# =====================================
-# DECISÃO
-# =====================================
-st.markdown("## 🎯 Leitura do Sistema")
+# =====================================================
+# DECISÃO FINAL
+# =====================================================
+st.markdown("## 🎯 Decisão da IA")
 
-c5 = last5(st.session_state.history)
+c9 = get_last_n(st.session_state.history, 9)
 
-if not c5:
-    st.info("⏳ Aguardando 5 resultados")
+if not c9:
+    st.info("⏳ Aguardando 9 resultados para análise completa")
 else:
-    pattern, direction, conf = detect_pattern(c5)
+    pattern, direction, confidence = analyze_cycle_9(c9)
 
-    st.markdown("### 🔄 Ciclo 5 (antigo → recente)")
-    st.write(" ".join(icon(x) for x in c5))
+    st.markdown("### 🔄 Ciclo analisado (Antigo → Recente)")
+    st.write(" ".join(icon(x) for x in c9))
 
-    st.markdown("### 🧠 Padrão Detectado")
+    st.markdown("### 🧠 Leitura Estrutural")
     st.write(pattern)
 
     if direction:
-        st.success(f"🎯 ENTRADA: {icon(direction)} | Confiança: {conf}%")
+        st.success(f"🎯 ENTRADA: {icon(direction)} | Confiança: {confidence}%")
     else:
-        st.warning("⏳ AGUARDAR – padrão instável ou armadilha")
+        st.warning("⏳ AGUARDAR – cassino ainda não revelou intenção")
