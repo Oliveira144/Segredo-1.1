@@ -1,185 +1,106 @@
 import streamlit as st
 
-# =====================================================
+# =====================================
 # CONFIG
-# =====================================================
-st.set_page_config(page_title="Football Studio – IA REAL", layout="centered")
+# =====================================
+st.set_page_config(page_title="Football Studio – Ciclo 5 Padrões", layout="centered")
 
-# =====================================================
+# =====================================
 # STATE
-# =====================================================
+# =====================================
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# =====================================================
+# =====================================
 # UI INPUT
-# =====================================================
-st.title("⚽ Football Studio – IA REAL")
+# =====================================
+st.title("⚽ Football Studio – Ciclo 5 com Padrões")
 
 c1, c2, c3 = st.columns(3)
 if c1.button("🔴 HOME"):
-    st.session_state.history.insert(0, "R")
+    st.session_state.history.append("R")
 if c2.button("🔵 AWAY"):
-    st.session_state.history.insert(0, "B")
+    st.session_state.history.append("B")
 if c3.button("🟡 DRAW"):
-    st.session_state.history.insert(0, "D")
+    st.session_state.history.append("D")
 
-# =====================================================
+# =====================================
 # UTILS
-# =====================================================
+# =====================================
 def icon(x):
     return "🔴" if x == "R" else "🔵" if x == "B" else "🟡"
 
-def cycle(hist, n):
-    return hist[:n] if len(hist) >= n else None
+def last5(hist):
+    return hist[-5:] if len(hist) >= 5 else None
 
-# =====================================================
-# FEATURE EXTRACTION
-# =====================================================
-def extract_features(seq):
-    feats = {
-        "R": seq.count("R"),
-        "B": seq.count("B"),
-        "D": seq.count("D"),
-        "alternancia": 0,
-        "streak_max": 1
-    }
-
-    streak = 1
-    for i in range(1, len(seq)):
-        if seq[i] == seq[i-1]:
-            streak += 1
-            feats["streak_max"] = max(feats["streak_max"], streak)
-        else:
-            streak = 1
-            if seq[i] != "D" and seq[i-1] != "D":
-                feats["alternancia"] += 1
-    return feats
-
-# =====================================================
-# REGIME – CICLO 7
-# =====================================================
-def regime_c7(c7):
-    f = extract_features(c7)
-
-    if f["D"] >= 3:
-        return "DRAW DOMINANTE", 8
-    if f["R"] >= 5:
-        return "DIREÇÃO 🔴", 7
-    if f["B"] >= 5:
-        return "DIREÇÃO 🔵", 7
-    if f["alternancia"] >= 4:
-        return "ALTERNÂNCIA REAL", 6
-    if f["D"] == 2:
-        return "COMPRESSÃO", 5
-    return "NEUTRO / ARMADILHA", 3
-
-# =====================================================
-# PROBABILITY ENGINE (IA)
-# =====================================================
-def probability_engine(hist):
-    if len(hist) < 7:
-        return None, None, None
-
-    c3 = cycle(hist, 3)
-    c5 = cycle(hist, 5)
-    c7 = cycle(hist, 7)
-
-    p = {"R": 33.0, "B": 33.0, "D": 34.0}
-
-    f3 = extract_features(c3)
-    f5 = extract_features(c5)
-    f7 = extract_features(c7)
-
-    # -------- CICLO 7 (REGIME)
-    if f7["R"] >= 5: p["R"] += 25
-    if f7["B"] >= 5: p["B"] += 25
-    if f7["D"] >= 3: p["D"] += 30
-
-    # -------- CICLO 5 (CONFIRMAÇÃO)
-    if f5["R"] >= 3: p["R"] += 10
-    if f5["B"] >= 3: p["B"] += 10
-    if f5["D"] >= 2: p["D"] += 12
-
-    # -------- CICLO 3 (TIMING)
-    if f3["alternancia"] == 2:
-        if c3[0] == "R": p["B"] += 10
-        if c3[0] == "B": p["R"] += 10
-
-    # NORMALIZA
-    total = sum(p.values())
-    for k in p:
-        p[k] = round(p[k] / total * 100, 2)
-
-    return p, c3, c5
-
-# =====================================================
-# DECISION ENGINE
-# =====================================================
-def ia_decision(hist):
-    probs, c3, c5 = probability_engine(hist)
-    if not probs:
-        return "⏳ AGUARDAR", "Histórico insuficiente", None
-
-    best = max(probs, key=probs.get)
-
-    if probs[best] >= 55:
-        label = "🔴 HOME" if best == "R" else "🔵 AWAY" if best == "B" else "🟡 DRAW"
-        return f"🎯 APOSTAR {label}", f"Probabilidade {probs[best]}%", probs
-
-    return "⏳ AGUARDAR", "Sem vantagem estatística", probs
-
-# =====================================================
-# DISPLAY
-# =====================================================
+# =====================================
+# HISTÓRICO
+# =====================================
 st.markdown("## 📊 Histórico")
-st.write(" ".join(icon(x) for x in st.session_state.history[:30]))
+st.write(" ".join(icon(x) for x in st.session_state.history[-30:]))
 
-decision, reason, probs = ia_decision(st.session_state.history)
+# =====================================
+# PADRÕES CICLO 5
+# =====================================
+def detect_pattern(c5):
+    r, b, d = c5.count("R"), c5.count("B"), c5.count("D")
+    alt = sum(1 for i in range(1, 5) if c5[i] != c5[i-1])
 
-st.markdown("## 🎯 Decisão da IA")
-st.success(f"{decision}\n\n{reason}")
+    # 🔁 Repetição
+    if r == 5:
+        return "Repetição 🔴", "R", 70
+    if b == 5:
+        return "Repetição 🔵", "B", 70
 
-# =====================================================
-# PAINEL CICLOS
-# =====================================================
-if len(st.session_state.history) >= 7:
-    st.markdown("## 🔄 Leitura por Ciclos")
+    # 🧱 Bloco 4 + 1
+    if r == 4:
+        return "Bloco 4+1 🔴", "R", 65
+    if b == 4:
+        return "Bloco 4+1 🔵", "B", 65
 
-    c3 = cycle(st.session_state.history, 3)
-    c5 = cycle(st.session_state.history, 5)
-    c7 = cycle(st.session_state.history, 7)
+    # 🎭 Falsa quebra
+    if c5[-1] != c5[-2] and c5.count(c5[-2]) >= 3:
+        return "Falsa quebra", c5[-2], 63
 
-    col1, col2, col3 = st.columns(3)
+    # ⚖️ Bloco 3x2
+    if r == 3 and b == 2:
+        return "Bloco 3x2 🔴", "R", 60
+    if b == 3 and r == 2:
+        return "Bloco 3x2 🔵", "B", 60
 
-    col1.markdown("### Ciclo 3 (Timing)")
-    col1.write(" ".join(icon(x) for x in c3))
+    # 🟡 Pressão de empate
+    if d >= 3:
+        return "Pressão de empate", "D", 62
 
-    col2.markdown("### Ciclo 5 (Confirmação)")
-    col2.write(" ".join(icon(x) for x in c5))
+    # 🔄 Alternância
+    if alt >= 4:
+        return "Alternância excessiva", None, 0
 
-    col3.markdown("### Ciclo 7 (Regime)")
-    col3.write(" ".join(icon(x) for x in c7))
+    # 🔒 Compressão
+    if alt == 3 and r == 2 and b == 3 or alt == 3 and b == 2 and r == 3:
+        return "Compressão de padrão", None, 0
 
-    regime, level = regime_c7(c7)
+    return "Sem padrão válido", None, 0
 
-    st.markdown("## 🔥 Mapa de Manipulação")
-    st.warning(f"Nível **{level}/9** — {regime}")
+# =====================================
+# DECISÃO
+# =====================================
+st.markdown("## 🎯 Leitura do Sistema")
 
-# =====================================================
-# PROBABILIDADES
-# =====================================================
-if probs:
-    st.markdown("## 📈 Probabilidades")
-    st.write(f"🔴 HOME: {probs['R']}%")
-    st.write(f"🔵 AWAY: {probs['B']}%")
-    st.write(f"🟡 DRAW: {probs['D']}%")
+c5 = last5(st.session_state.history)
 
-# =====================================================
-# PAINEL LEITURA
-# =====================================================
-st.markdown("## 🎭 Cassino vs Jogador")
-st.info(
-    "Cassino tenta induzir por ruído e alternância curta.\n\n"
-    "Jogador espera regime (7), confirma (5) e entra no timing (3)."
-)
+if not c5:
+    st.info("⏳ Aguardando 5 resultados")
+else:
+    pattern, direction, conf = detect_pattern(c5)
+
+    st.markdown("### 🔄 Ciclo 5")
+    st.write(" ".join(icon(x) for x in c5))
+
+    st.markdown("### 🧠 Padrão Detectado")
+    st.write(pattern)
+
+    if direction:
+        st.success(f"🎯 ENTRADA: {icon(direction)} | Confiança: {conf}%")
+    else:
+        st.warning("⏳ AGUARDAR – padrão instável ou armadilha")
