@@ -1,23 +1,23 @@
 import streamlit as st
 
 # =====================================================
-# CONFIGURAÇÃO
+# CONFIG
 # =====================================================
 st.set_page_config(
-    page_title="Football Studio – IA Ciclo 9",
+    page_title="Football Studio – IA Ciclo 9 (Leitura Correta)",
     layout="centered"
 )
 
 # =====================================================
-# ESTADO GLOBAL
+# STATE
 # =====================================================
 if "history" not in st.session_state:
     st.session_state.history = []  # antigo -> recente
 
 # =====================================================
-# UI – ENTRADA DE DADOS
+# UI INPUT
 # =====================================================
-st.title("⚽ Football Studio – IA Profissional (Ciclo 9)")
+st.title("⚽ Football Studio – IA Profissional")
 
 c1, c2, c3 = st.columns(3)
 if c1.button("🔴 HOME"):
@@ -28,15 +28,15 @@ if c3.button("🟡 DRAW"):
     st.session_state.history.append("D")
 
 # =====================================================
-# UTILIDADES
+# UTILS
 # =====================================================
 def icon(x):
     return "🔴" if x == "R" else "🔵" if x == "B" else "🟡"
 
-def get_last_n(hist, n):
-    if len(hist) < n:
+def get_ciclo_9(hist):
+    if len(hist) < 9:
         return None
-    return hist[-n:]  # antigo -> recente
+    return hist[-9:]  # antigo -> recente
 
 # =====================================================
 # HISTÓRICO VISUAL
@@ -46,60 +46,52 @@ visual = list(reversed(st.session_state.history[-30:]))
 st.write(" ".join(icon(x) for x in visual))
 
 # =====================================================
-# IA – ANÁLISE CICLO 9 (ESTRUTURAL)
+# IA – LEITURA DIREITA → ESQUERDA
 # =====================================================
-def analyze_cycle_9(c9):
-    # c9 está em ordem temporal correta (antigo -> recente)
+def analyze_ciclo_9(c9):
+    """
+    c9 chega como antigo -> recente
+    leitura correta = recente -> antigo
+    """
+    leitura = list(reversed(c9))  # 🔥 ponto-chave
 
-    r = c9.count("R")
-    b = c9.count("B")
-    d = c9.count("D")
+    r = leitura.count("R")
+    b = leitura.count("B")
+    d = leitura.count("D")
 
-    alternancias = sum(1 for i in range(1, 9) if c9[i] != c9[i-1])
+    alternancias = sum(
+        1 for i in range(1, 9) if leitura[i] != leitura[i - 1]
+    )
 
-    # -------------------------------------------------
-    # 1. REPETIÇÃO DOMINANTE (CONTROLE)
-    # -------------------------------------------------
-    if r >= 7:
-        return "Domínio prolongado 🔴", "R", 75
-    if b >= 7:
-        return "Domínio prolongado 🔵", "B", 75
+    # 1️⃣ DOMÍNIO ATIVO (6+)
+    if leitura[:6].count("R") >= 5:
+        return "Domínio ativo 🔴", "R", 75
+    if leitura[:6].count("B") >= 5:
+        return "Domínio ativo 🔵", "B", 75
 
-    # -------------------------------------------------
-    # 2. BLOCO ESTRUTURAL 6 + 3
-    # -------------------------------------------------
+    # 2️⃣ ESTRUTURA 6x3 (OLHANDO DO PRESENTE)
     if r == 6 and b == 3:
-        return "Estrutura 6x3 🔴", "R", 70
-    if b == 6 and r == 3:
-        return "Estrutura 6x3 🔵", "B", 70
+        dominante = "R" if leitura[0] == "R" else "B"
+        return "Estrutura 6x3", dominante, 70
 
-    # -------------------------------------------------
-    # 3. FALSA QUEBRA REAL (RETORNO)
-    # -------------------------------------------------
-    if c9[-1] != c9[-2]:
-        dominante = c9[-2]
-        if c9.count(dominante) >= 5:
-            return "Falsa quebra confirmada", dominante, 72
+    # 3️⃣ FALSA QUEBRA REAL
+    if leitura[0] != leitura[1]:
+        base = leitura[1]
+        if leitura.count(base) >= 5:
+            return "Falsa quebra (retorno)", base, 72
 
-    # -------------------------------------------------
-    # 4. SIMETRIA OCULTA (3–3–3)
-    # -------------------------------------------------
-    if c9[:3] == c9[3:6] == c9[6:9]:
-        return "Simetria 3x3x3", c9[-1], 76
+    # 4️⃣ SIMETRIA OCULTA (3–3–3)
+    if leitura[0:3] == leitura[3:6] == leitura[6:9]:
+        return "Simetria 3x3x3", leitura[0], 76
 
-    # -------------------------------------------------
-    # 5. COMPRESSÃO (ARMADILHA)
-    # -------------------------------------------------
-    if alternancias >= 6 and r >= 3 and b >= 3:
-        return "Compressão ativa (aguardar)", None, 0
+    # 5️⃣ COMPRESSÃO (ARMADILHA)
+    if alternancias >= 6:
+        return "Compressão ativa – aguardar", None, 0
 
-    # -------------------------------------------------
-    # 6. PRESSÃO DE EMPATE
-    # -------------------------------------------------
+    # 6️⃣ PRESSÃO DE DRAW
     if d >= 4:
-        return "Pressão estatística de Draw", "D", 73
+        return "Pressão estatística de empate", "D", 73
 
-    # -------------------------------------------------
     return "Sem padrão confiável", None, 0
 
 # =====================================================
@@ -107,20 +99,20 @@ def analyze_cycle_9(c9):
 # =====================================================
 st.markdown("## 🎯 Decisão da IA")
 
-c9 = get_last_n(st.session_state.history, 9)
+c9 = get_ciclo_9(st.session_state.history)
 
 if not c9:
-    st.info("⏳ Aguardando 9 resultados para análise completa")
+    st.info("⏳ Aguardando 9 resultados")
 else:
-    pattern, direction, confidence = analyze_cycle_9(c9)
+    pattern, direction, conf = analyze_ciclo_9(c9)
 
-    st.markdown("### 🔄 Ciclo analisado (Antigo → Recente)")
-    st.write(" ".join(icon(x) for x in c9))
+    st.markdown("### 🔄 Ciclo analisado (Direita → Esquerda)")
+    st.write(" ".join(icon(x) for x in reversed(c9)))
 
     st.markdown("### 🧠 Leitura Estrutural")
     st.write(pattern)
 
     if direction:
-        st.success(f"🎯 ENTRADA: {icon(direction)} | Confiança: {confidence}%")
+        st.success(f"🎯 ENTRADA: {icon(direction)} | Confiança: {conf}%")
     else:
-        st.warning("⏳ AGUARDAR – cassino ainda não revelou intenção")
+        st.warning("⏳ AGUARDAR – cassino ainda não expôs a intenção")
